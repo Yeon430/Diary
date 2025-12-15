@@ -1,0 +1,88 @@
+import React from "react";
+
+function DetailPage({ selectedWord, setCurrentPage, setSelectedWordIndex }) {
+  if (!selectedWord) return null;
+
+  return (
+    <div className="App">
+      <div className="main-container detail-container">
+        {/* Back button */}
+        <button
+          className="back-button"
+          onClick={() => {
+            setCurrentPage("input");
+            setSelectedWordIndex(null);
+          }}
+          style={{
+            position: "absolute",
+            top: "20px",
+            left: "20px",
+            zIndex: 100,
+          }}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        {/* Header with word bubble and face */}
+        <div className="detail-header">
+          <div className="detail-word-bubble">{selectedWord.text}</div>
+          {selectedWord.faceImage && (
+            <div className="detail-face-circle">
+              <img
+                src={selectedWord.faceImage}
+                alt="Face"
+                className="detail-face-image"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Note text */}
+        {selectedWord.note && (
+          <div className="detail-note-text">{selectedWord.note}</div>
+        )}
+
+        {/* Uploaded image/video */}
+        {selectedWord.uploadedFile && (
+          <div className="detail-image-container">
+            {selectedWord.uploadedFile.type.startsWith("image/") ? (
+              <img
+                src={URL.createObjectURL(selectedWord.uploadedFile)}
+                alt="Uploaded"
+                className="detail-image"
+              />
+            ) : (
+              <video
+                src={URL.createObjectURL(selectedWord.uploadedFile)}
+                controls
+                className="detail-image"
+              />
+            )}
+          </div>
+        )}
+
+        {/* Footer with avatar, chat bubble, and date */}
+        <div className="detail-footer">
+          <div className="avatar detail-avatar"></div>
+          <div className="detail-chat-bubble">If you need some help..</div>
+          {selectedWord.date && (
+            <div className="detail-date">{selectedWord.date}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default DetailPage;
