@@ -85,3 +85,6 @@ function NotePage({ noteValue, setNoteValue, setCurrentPage }) {
 }
 
 export default NotePage;
+
+
+

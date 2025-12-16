@@ -784,15 +784,14 @@
   background-color: #364c41 !important;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding-bottom: 100px;
 }
 
 .chat-messages {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  padding-top: 80px;
+  padding-top: 60px;
+  padding-bottom: 120px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -856,9 +855,9 @@
 
 .suggestion-button {
   background-color: #ffcfed;
-  border: none;
+  border: 2px solid #364c41;
   border-radius: 12px;
-  padding: 10px 16px;
+  padding: 12px 18px;
   font-family: "ClashDisplay", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
   font-size: 14px;
@@ -866,30 +865,31 @@
   font-weight: 500;
   cursor: pointer;
   text-align: left;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   width: 100%;
+  box-shadow: 0 2px 4px rgba(54, 76, 65, 0.1);
 }
 
 .suggestion-button:hover {
-  opacity: 0.8;
+  background-color: #ffb8e6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(54, 76, 65, 0.15);
 }
 
 .suggestion-button:active {
-  opacity: 0.6;
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(54, 76, 65, 0.1);
 }
 
 .chat-input-section {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 375px;
-  max-width: 100%;
+  position: absolute;
+  bottom: 20px;
+  left: 12px;
+  right: 12px;
   padding: 16px;
-  background-color: #364c41;
+  background-color: transparent;
   display: flex;
   gap: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .chat-input {

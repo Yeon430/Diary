@@ -1,17 +1,48 @@
 import React, { useState, useRef, useEffect } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getDiaryEntries } from "../utils/localStorage";
 
 function ChatPage({ setCurrentPage }) {
+  const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
+  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+  const [diaryEntries, setDiaryEntries] = useState([]);
+  const [selectedEntryId, setSelectedEntryId] = useState(null);
   const [messages, setMessages] = useState([
     {
       id: 1,
       type: "ai",
       content: "Hi Yonoo!\nWhat do you need today?",
-      suggestions: ["Clear advice", "Supportive messages", "Write apologies for me"],
+      suggestions: [
+        "Clear advice",
+        "Supportive messages",
+        "Write apologies for me",
+      ],
     },
   ]);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Load diary entries on mount
+  useEffect(() => {
+    const entries = getDiaryEntries();
+    setDiaryEntries(entries);
+
+    // Auto-select most recent entry if available
+    if (entries.length > 0) {
+      // Sort by date (most recent first)
+      const sortedEntries = [...entries].sort((a, b) => {
+        const dateA = a.date
+          ? new Date(a.date.replace(/\./g, "-"))
+          : new Date(0);
+        const dateB = b.date
+          ? new Date(b.date.replace(/\./g, "-"))
+          : new Date(0);
+        return dateB - dateA;
+      });
+      setSelectedEntryId(sortedEntries[0].id);
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -21,7 +52,13 @@ function ChatPage({ setCurrentPage }) {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
+  // Get the selected diary entry
+  const getSelectedEntry = () => {
+    if (!selectedEntryId) return null;
+    return diaryEntries.find((entry) => entry.id === selectedEntryId);
+  };
+
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     // 사용자 메시지 추가
@@ -31,24 +68,214 @@ function ChatPage({ setCurrentPage }) {
       content: inputValue,
     };
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue("");
 
-    // TODO: Gemini API 호출
-    // 여기에 Gemini API 연동 코드 추가 예정
-    setTimeout(() => {
-      const aiMessage = {
-        id: Date.now() + 1,
-        type: "ai",
-        content: "I'm here to help! (Gemini API will be connected here)",
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 500);
+    // 로딩 메시지 추가
+    const loadingMessage = {
+      id: Date.now() + 1,
+      type: "ai",
+      content: "Thinking...",
+      isLoading: true,
+    };
+    setMessages((prev) => [...prev, loadingMessage]);
+
+    try {
+      if (!genAI) {
+        throw new Error("API key not configured");
+      }
+
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      // Include diary context if available
+      const selectedEntry = getSelectedEntry();
+      let prompt = currentInput;
+
+      if (selectedEntry && (selectedEntry.note || selectedEntry.word)) {
+        const diaryContext = `Diary Entry:
+Date: ${selectedEntry.date || ""}
+Word: ${selectedEntry.word || ""}
+Note: ${selectedEntry.note || ""}
+
+User's question: ${currentInput}
+
+IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any markdown formatting like **, #, -, or bullet points. Write in plain text only, as if you're having a casual conversation. Respond to the user's question, considering the context from their diary entry.`;
+        prompt = diaryContext;
+      } else {
+        // Add instructions even when no diary entry
+        prompt = `${currentInput}
+
+IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any markdown formatting like **, #, -, or bullet points. Write in plain text only.`;
+      }
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // 로딩 메시지 제거하고 응답 추가
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => !msg.isLoading);
+        return [
+          ...filtered,
+          {
+            id: Date.now() + 2,
+            type: "ai",
+            content: text,
+            suggestions: [
+              "Clear advice",
+              "Supportive messages",
+              "Write apologies for me",
+            ],
+          },
+        ];
+      });
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      // 에러 메시지 표시
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => !msg.isLoading);
+        return [
+          ...filtered,
+          {
+            id: Date.now() + 2,
+            type: "ai",
+            content:
+              "Sorry, I'm having trouble connecting. Please check your API key.",
+            suggestions: [
+              "Clear advice",
+              "Supportive messages",
+              "Write apologies for me",
+            ],
+          },
+        ];
+      });
+    }
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    setInputValue(suggestion);
-    inputRef.current?.focus();
+  // Create prompt based on button type and diary entry
+  const createPrompt = (buttonType, diaryEntry) => {
+    const diaryText = diaryEntry?.note || "";
+    const diaryWord = diaryEntry?.word || "";
+    const diaryDate = diaryEntry?.date || "";
+
+    const hasDiaryContent = diaryText || diaryWord;
+    const context = hasDiaryContent
+      ? `Diary Entry:
+Date: ${diaryDate}
+Word: ${diaryWord}
+Note: ${diaryText}`
+      : "";
+
+    const baseInstructions = `IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any markdown formatting like **, #, -, or bullet points. Write in plain text only, as if you're having a casual conversation.`;
+
+    switch (buttonType) {
+      case "Clear advice":
+        return hasDiaryContent
+          ? `${context}
+
+${baseInstructions}
+Based on this diary entry, provide clear, practical advice in 2-3 short sentences. Be direct and helpful.`
+          : `${baseInstructions}
+The user is asking for clear, practical advice. Provide helpful guidance in 2-3 short sentences.`;
+
+      case "Supportive messages":
+        return hasDiaryContent
+          ? `${context}
+
+${baseInstructions}
+Based on this diary entry, provide warm, empathetic, and supportive messages in 2-3 short sentences. Be understanding and encouraging.`
+          : `${baseInstructions}
+The user is looking for support and encouragement. Provide warm, empathetic messages in 2-3 short sentences.`;
+
+      case "Write apologies for me":
+        return hasDiaryContent
+          ? `${context}
+
+${baseInstructions}
+Based on this diary entry, write a sincere and thoughtful apology message. Keep it short (2-3 sentences) and genuine.`
+          : `${baseInstructions}
+The user needs help writing an apology message. Write a short, sincere apology (2-3 sentences) or ask what situation they need to apologize for.`;
+
+      default:
+        return context || "How can I help you today?";
+    }
   };
+
+  // Handle button click - trigger API call with specific prompt type
+  const handleSuggestionClick = async (suggestion) => {
+    const selectedEntry = getSelectedEntry();
+
+    // Add user message showing which button was clicked
+    const userMessage = {
+      id: Date.now(),
+      type: "user",
+      content: suggestion,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Add loading message
+    const loadingMessage = {
+      id: Date.now() + 1,
+      type: "ai",
+      content: "Thinking...",
+      isLoading: true,
+    };
+    setMessages((prev) => [...prev, loadingMessage]);
+
+    try {
+      if (!genAI) {
+        throw new Error("API key not configured");
+      }
+
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const prompt = createPrompt(suggestion, selectedEntry);
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      // Remove loading message and add response
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => !msg.isLoading);
+        return [
+          ...filtered,
+          {
+            id: Date.now() + 2,
+            type: "ai",
+            content: text,
+            suggestions: [
+              "Clear advice",
+              "Supportive messages",
+              "Write apologies for me",
+            ],
+          },
+        ];
+      });
+    } catch (error) {
+      console.error("Error calling Gemini API:", error);
+      // Error message
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => !msg.isLoading);
+        return [
+          ...filtered,
+          {
+            id: Date.now() + 2,
+            type: "ai",
+            content:
+              "Sorry, I'm having trouble connecting. Please check your API key.",
+            suggestions: [
+              "Clear advice",
+              "Supportive messages",
+              "Write apologies for me",
+            ],
+          },
+        ];
+      });
+    }
+  };
+
+  // Get selected entry info for display
+  const selectedEntry = getSelectedEntry();
 
   return (
     <div className="App">
@@ -78,12 +305,46 @@ function ChatPage({ setCurrentPage }) {
           </svg>
         </button>
 
+        {/* Diary entry selector */}
+        {diaryEntries.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: "20px",
+              right: "20px",
+              zIndex: 1000,
+              background: "rgba(255, 255, 255, 0.1)",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              fontSize: "12px",
+              color: "#ffffff",
+            }}
+          >
+            {selectedEntry ? (
+              <div>
+                <div style={{ fontWeight: "bold", marginBottom: "4px" }}>
+                  Reading: {selectedEntry.word || "Untitled"}
+                </div>
+                {selectedEntry.date && (
+                  <div style={{ opacity: 0.8, fontSize: "11px" }}>
+                    {selectedEntry.date}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>No entry selected</div>
+            )}
+          </div>
+        )}
+
         {/* Chat messages */}
         <div className="chat-messages">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`chat-message ${message.type === "ai" ? "ai-message" : "user-message"}`}
+              className={`chat-message ${
+                message.type === "ai" ? "ai-message" : "user-message"
+              }`}
             >
               {message.type === "ai" && (
                 <div className="chat-avatar">
@@ -163,4 +424,3 @@ function ChatPage({ setCurrentPage }) {
 }
 
 export default ChatPage;
-
