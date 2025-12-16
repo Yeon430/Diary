@@ -1,4 +1,5 @@
 import React from "react";
+import { saveDiaryEntry } from "../utils/localStorage";
 
 function UploadPage({
   fileInputRef,
@@ -121,7 +122,7 @@ function UploadPage({
         <div className="next-button-section">
           <button
             className="next-button"
-            onClick={() => {
+            onClick={async () => {
               // 새로운 단어 박스 생성
               if (savedInputValue && drawnFaceImage) {
                 const today = new Date();
@@ -129,6 +130,21 @@ function UploadPage({
                 const month = String(today.getMonth() + 1).padStart(2, "0");
                 const day = String(today.getDate()).padStart(2, "0");
                 const dateString = `${year}.${month}.${day}`;
+
+                // localStorage에 저장
+                try {
+                  await saveDiaryEntry({
+                    date: dateString,
+                    word: savedInputValue,
+                    feeling: drawnFaceImage, // 이미 base64 형식
+                    note: noteValue || "",
+                    media: uploadedFile, // File 객체 (saveDiaryEntry에서 base64로 변환)
+                  });
+                  console.log("Diary entry saved to localStorage");
+                } catch (error) {
+                  console.error("Failed to save to localStorage:", error);
+                  // 에러가 발생해도 UI는 계속 진행
+                }
 
                 const newWord = {
                   text: savedInputValue,

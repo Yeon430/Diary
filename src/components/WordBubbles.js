@@ -37,6 +37,7 @@ function WordBubbles({
       return;
     }
 
+    let animationFrameId = null;
     const container = containerRef.current;
     const containerWidth = container.offsetWidth;
     const containerHeight = container.offsetHeight;
@@ -71,20 +72,30 @@ function WordBubbles({
       return textMeasure.clientHeight;
     }
 
-    // Canvas 생성
+    // Canvas 생성 (고해상도 지원)
+    const dpr = window.devicePixelRatio || 1;
     const canvas = document.createElement("canvas");
-    canvas.width = containerWidth;
-    canvas.height = containerHeight;
+    canvas.width = containerWidth * dpr;
+    canvas.height = containerHeight * dpr;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${containerHeight}px`;
     canvas.style.position = "absolute";
     canvas.style.top = "0";
     canvas.style.left = "0";
     canvas.style.pointerEvents = "none";
+    canvas.style.zIndex = "50";
     container.appendChild(canvas);
     canvasRef.current = canvas;
 
     const context = canvas.getContext("2d");
+    
+    // 고해상도 스케일링
+    context.scale(dpr, dpr);
+    
+    // 선명한 렌더링을 위한 설정
+    context.imageSmoothingEnabled = false;
 
-    // Render 생성 (실제 렌더링은 canvas에 직접 그리기)
+    // Render 생성 (마우스 이벤트용으로만 사용)
     const render = Render.create({
       canvas: canvas,
       engine: engine,
@@ -95,12 +106,14 @@ function WordBubbles({
         background: "transparent",
         showAngleIndicator: false,
         showVelocity: false,
+        enabled: false, // 기본 렌더링 비활성화 (커스텀 렌더링 사용)
       },
     });
     renderRef.current = render;
 
-    const font = "20px ClashDisplay, Arial";
-    const padding = 20;
+    const font = "30px ClashDisplay, Arial";
+    const paddingX = 28; // 가로 패딩 (좌우)
+    const paddingY = 10; // 세로 패딩 (상하)
     const bubbles = [];
 
     // 버블 생성 (오래된 것부터)
@@ -108,8 +121,10 @@ function WordBubbles({
       const text = word.text;
       const textWidth = getTextWidth(text, font);
       const textHeight = getTextHeight(font);
-      const width = textWidth + padding * 2;
-      const height = textHeight + padding * 2;
+      const iconSize = word.icon && word.faceImage ? 24 : 0; // 아이콘 크기
+      const iconPadding = word.icon && word.faceImage ? 8 : 0; // 아이콘과 텍스트 사이 간격
+      const width = textWidth + paddingX * 2 + (iconSize > 0 ? iconSize + iconPadding : 0);
+      const height = Math.max(textHeight, iconSize) + paddingY * 2;
 
       // 초기 위치: 오래된 항목일수록 더 위에서 시작
       const baseY = -100;
@@ -133,6 +148,8 @@ function WordBubbles({
         label: text,
         textWidth: textWidth,
         textHeight: textHeight,
+        fixedWidth: width, // 고정된 너비 저장
+        fixedHeight: height, // 고정된 높이 저장
         wordIndex: i, // 원본 인덱스 저장
         wordData: word, // 원본 데이터 저장
         rotation: rotation,
@@ -268,9 +285,9 @@ function WordBubbles({
       canvas.style.cursor = "grab";
     });
 
-    // 렌더링 루프
-    Events.on(render, "afterRender", () => {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+    // 커스텀 렌더링 루프
+    const renderLoop = () => {
+      context.clearRect(0, 0, containerWidth, containerHeight);
 
       bubbles.forEach((bubble) => {
         const word = bubble.label;
@@ -283,12 +300,13 @@ function WordBubbles({
         context.translate(pos.x, pos.y);
         context.rotate(angle);
 
-        // pill 형태 배경
-        const width = bubble.bounds.max.x - bubble.bounds.min.x;
-        const height = bubble.bounds.max.y - bubble.bounds.min.y;
+        // pill 형태 배경 (고정된 크기 사용)
+        const width = bubble.fixedWidth || (bubble.bounds.max.x - bubble.bounds.min.x);
+        const height = bubble.fixedHeight || (bubble.bounds.max.y - bubble.bounds.min.y);
         const radius = Math.min(width, height) / 2;
 
-        context.fillStyle = "#3f4f45";
+        // 버블 배경 (dark green)
+        context.fillStyle = "#364c41";
         context.beginPath();
         // roundRect 대신 수동으로 둥근 사각형 그리기
         const x = -width / 2;
@@ -310,22 +328,42 @@ function WordBubbles({
         context.closePath();
         context.fill();
 
-        // 텍스트 그리기
+        // 텍스트와 아이콘을 가로로 배치
+        const textX = -width / 2 + paddingX; // 왼쪽에서 패딩만큼 떨어진 위치
+        const iconX = width / 2 - paddingX - 12; // 오른쪽에서 패딩 + 반지름만큼 떨어진 위치
+        
+        // 텍스트 그리기 (왼쪽 정렬)
         context.font = font;
-        context.fillStyle = "#f7f8cf";
-        context.textAlign = "center";
+        context.textAlign = "left";
         context.textBaseline = "middle";
+        
+        // 텍스트 선명도를 위한 subtle stroke 추가
+        context.strokeStyle = "#2a3a33";
+        context.lineWidth = 1;
+        context.lineJoin = "round";
+        context.miterLimit = 2;
+        
+        // 텍스트 stroke (외곽선) 먼저 그리기
+        context.strokeText(word, textX, 0);
+        
+        // 텍스트 fill (흰색)
+        context.fillStyle = "#ffffff";
+        context.fillText(word, textX, 0);
 
-        // 얼굴 이미지가 있으면 텍스트를 위로, 없으면 중앙
-        const textY = wordData.icon && wordData.faceImage ? -8 : 0;
-        context.fillText(word, 0, textY);
-
-        // 얼굴 이미지 그리기 (캐시된 이미지 사용)
+        // 얼굴 이미지 그리기 (오른쪽, 흰색 원 안에)
         if (wordData.icon && wordData.faceImage) {
           const cachedImg = imageCache.get(bubble.wordIndex);
           if (cachedImg) {
             context.save();
-            context.translate(0, 8); // 텍스트 아래
+            context.translate(iconX, 0); // 오른쪽으로 이동
+            
+            // 흰색 원 배경
+            context.beginPath();
+            context.arc(0, 0, 12, 0, Math.PI * 2);
+            context.fillStyle = "#ffffff";
+            context.fill();
+            
+            // 이미지 클리핑
             context.beginPath();
             context.arc(0, 0, 12, 0, Math.PI * 2);
             context.clip();
@@ -336,8 +374,13 @@ function WordBubbles({
 
         context.restore();
       });
-    });
 
+      animationFrameId = requestAnimationFrame(renderLoop);
+    };
+
+    // 렌더링 루프 시작
+    renderLoop();
+    
     // Runner 시작
     const runner = Runner.create();
     Runner.run(runner, engine);
@@ -360,8 +403,12 @@ function WordBubbles({
     const handleResize = () => {
       const newWidth = container.offsetWidth;
       const newHeight = container.offsetHeight;
-      canvas.width = newWidth;
-      canvas.height = newHeight;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = newWidth * dpr;
+      canvas.height = newHeight * dpr;
+      canvas.style.width = `${newWidth}px`;
+      canvas.style.height = `${newHeight}px`;
+      context.scale(dpr, dpr);
       render.options.width = newWidth;
       render.options.height = newHeight;
     };
@@ -373,6 +420,9 @@ function WordBubbles({
       clearInterval(forceInterval);
       window.removeEventListener("resize", handleResize);
       document.body.removeChild(textMeasure);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       if (runnerRef.current) {
         Runner.stop(runnerRef.current);
       }

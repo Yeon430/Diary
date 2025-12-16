@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 function FeelingPage({
   canvasRef,
@@ -7,6 +7,48 @@ function FeelingPage({
   setCurrentPage,
   setDrawnFaceImage,
 }) {
+  // 터치 이벤트를 non-passive로 등록하여 preventDefault 사용 가능하게 함
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleTouchStart = (e) => {
+      e.preventDefault();
+      setIsDrawing(true);
+      const rect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext("2d");
+      const touch = e.touches[0];
+      ctx.beginPath();
+      ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+    };
+
+    const handleTouchMove = (e) => {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const ctx = canvas.getContext("2d");
+      const touch = e.touches[0];
+      ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+      ctx.stroke();
+    };
+
+    const handleTouchEnd = (e) => {
+      e.preventDefault();
+      setIsDrawing(false);
+    };
+
+    // non-passive 이벤트 리스너 등록
+    canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
+    canvas.addEventListener("touchend", handleTouchEnd, { passive: false });
+
+    return () => {
+      canvas.removeEventListener("touchstart", handleTouchStart);
+      canvas.removeEventListener("touchmove", handleTouchMove);
+      canvas.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [canvasRef, isDrawing, setIsDrawing]);
+
   return (
     <div className="App">
       <div className="main-container">
@@ -89,32 +131,6 @@ function FeelingPage({
               setIsDrawing(false);
             }}
             onMouseLeave={(e) => {
-              e.preventDefault();
-              setIsDrawing(false);
-            }}
-            onTouchStart={(e) => {
-              e.preventDefault();
-              setIsDrawing(true);
-              const canvas = canvasRef.current;
-              if (!canvas) return;
-              const rect = canvas.getBoundingClientRect();
-              const ctx = canvas.getContext("2d");
-              const touch = e.touches[0];
-              ctx.beginPath();
-              ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-            }}
-            onTouchMove={(e) => {
-              e.preventDefault();
-              if (!isDrawing) return;
-              const canvas = canvasRef.current;
-              if (!canvas) return;
-              const rect = canvas.getBoundingClientRect();
-              const ctx = canvas.getContext("2d");
-              const touch = e.touches[0];
-              ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-              ctx.stroke();
-            }}
-            onTouchEnd={(e) => {
               e.preventDefault();
               setIsDrawing(false);
             }}

@@ -6,6 +6,7 @@ import UploadPage from "./pages/UploadPage";
 import DetailPage from "./pages/DetailPage";
 import ChatPage from "./pages/ChatPage";
 import WordBubbles from "./components/WordBubbles";
+import { getDiaryEntries } from "./utils/localStorage";
 
 function App() {
   const [inputValue, setInputValue] = useState("");
@@ -30,6 +31,31 @@ function App() {
     { text: "Pizzaa", icon: true },
     { text: "Movie", icon: true },
   ]);
+
+  // localStorage에서 다이어리 항목 불러오기
+  useEffect(() => {
+    const entries = getDiaryEntries();
+    if (entries.length > 0) {
+      // localStorage 항목을 words 형식으로 변환
+      const loadedWords = entries.map((entry) => ({
+        text: entry.word || "",
+        icon: !!entry.feeling, // feeling이 있으면 icon 표시
+        faceImage: entry.feeling || null, // base64 이미지
+        note: entry.note || "",
+        uploadedFile: entry.media || null, // base64 문자열
+        date: entry.date || "",
+        id: entry.id, // 나중에 사용할 수 있도록 id 저장
+        mediaType: entry.mediaType || null,
+      }));
+
+      // 기존 하드코딩된 words와 합치기 (중복 제거)
+      setWords((prevWords) => {
+        const existingTexts = new Set(prevWords.map((w) => w.text));
+        const newWords = loadedWords.filter((w) => !existingTexts.has(w.text));
+        return [...prevWords, ...newWords];
+      });
+    }
+  }, []);
 
   // 버블 위치 하드코딩 (스크린샷 정확히 재현)
   useEffect(() => {

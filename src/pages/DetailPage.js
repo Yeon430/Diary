@@ -56,19 +56,22 @@ function DetailPage({ selectedWord, setCurrentPage, setSelectedWordIndex }) {
         {/* Uploaded image/video */}
         {selectedWord.uploadedFile && (
           <div className="detail-image-container">
-            {selectedWord.uploadedFile.type.startsWith("image/") ? (
-              <img
-                src={URL.createObjectURL(selectedWord.uploadedFile)}
-                alt="Uploaded"
-                className="detail-image"
-              />
-            ) : (
-              <video
-                src={URL.createObjectURL(selectedWord.uploadedFile)}
-                controls
-                className="detail-image"
-              />
-            )}
+            {(() => {
+              // base64 문자열인지 File 객체인지 확인
+              const isBase64 = typeof selectedWord.uploadedFile === "string";
+              const mediaType = isBase64
+                ? selectedWord.mediaType
+                : selectedWord.uploadedFile.type;
+              const src = isBase64
+                ? selectedWord.uploadedFile
+                : URL.createObjectURL(selectedWord.uploadedFile);
+
+              return mediaType && mediaType.startsWith("image/") ? (
+                <img src={src} alt="Uploaded" className="detail-image" />
+              ) : (
+                <video src={src} controls className="detail-image" />
+              );
+            })()}
           </div>
         )}
 
