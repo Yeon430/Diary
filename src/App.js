@@ -4,6 +4,7 @@ import FeelingPage from "./pages/FeelingPage";
 import NotePage from "./pages/NotePage";
 import UploadPage from "./pages/UploadPage";
 import DetailPage from "./pages/DetailPage";
+import ChatPage from "./pages/ChatPage";
 import WordBubbles from "./components/WordBubbles";
 
 function App() {
@@ -108,6 +109,11 @@ function App() {
     );
   }
 
+  // Chat page
+  if (currentPage === "chat") {
+    return <ChatPage setCurrentPage={setCurrentPage} />;
+  }
+
   // Detail page (diary entry view)
   if (currentPage === "detail" && selectedWordIndex !== null) {
     const selectedWord = words[selectedWordIndex];
@@ -147,7 +153,11 @@ function App() {
           <div className="chat-bubble">
             {showLayerMessage ? "Great job!" : "If you need some advise.."}
           </div>
-          <div className="avatar"></div>
+          <div
+            className="avatar"
+            onClick={() => setCurrentPage("chat")}
+            style={{ cursor: "pointer" }}
+          ></div>
         </div>
 
         {/* Layer added message */}
