@@ -137,7 +137,14 @@ function App() {
 
   // Chat page
   if (currentPage === "chat") {
-    return <ChatPage setCurrentPage={setCurrentPage} />;
+    const selectedWord =
+      selectedWordIndex !== null ? words[selectedWordIndex] : null;
+    return (
+      <ChatPage
+        setCurrentPage={setCurrentPage}
+        selectedDiaryEntry={selectedWord}
+      />
+    );
   }
 
   // Detail page (diary entry view)
@@ -148,6 +155,10 @@ function App() {
         selectedWord={selectedWord}
         setCurrentPage={setCurrentPage}
         setSelectedWordIndex={setSelectedWordIndex}
+        setSelectedWordForChat={(word) => {
+          // 선택된 일기를 저장하여 챗봇 페이지에서 사용
+          setSelectedWordIndex(words.findIndex((w) => w.id === word.id));
+        }}
       />
     );
   }

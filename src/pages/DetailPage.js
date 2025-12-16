@@ -1,6 +1,6 @@
 import React from "react";
 
-function DetailPage({ selectedWord, setCurrentPage, setSelectedWordIndex }) {
+function DetailPage({ selectedWord, setCurrentPage, setSelectedWordIndex, setSelectedWordForChat }) {
   if (!selectedWord) return null;
 
   return (
@@ -78,7 +78,18 @@ function DetailPage({ selectedWord, setCurrentPage, setSelectedWordIndex }) {
         {/* Footer with avatar, chat bubble, and date */}
         <div className="detail-footer">
           <div className="avatar detail-avatar"></div>
-          <div className="detail-chat-bubble">If you need some help..</div>
+          <div 
+            className="detail-chat-bubble"
+            onClick={() => {
+              if (setSelectedWordForChat) {
+                setSelectedWordForChat(selectedWord);
+              }
+              setCurrentPage("chat");
+            }}
+            style={{ cursor: "pointer" }}
+          >
+            If you need some help..
+          </div>
           {selectedWord.date && (
             <div className="detail-date">{selectedWord.date}</div>
           )}

@@ -2,13 +2,36 @@ import React, { useState, useRef, useEffect } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getDiaryEntries } from "../utils/localStorage";
 
-function ChatPage({ setCurrentPage }) {
+function ChatPage({ setCurrentPage, selectedDiaryEntry }) {
   const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
   const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
   const [diaryEntries, setDiaryEntries] = useState([]);
   const [selectedEntryId, setSelectedEntryId] = useState(null);
-  const [messages, setMessages] = useState([
-    {
+
+  // 초기 메시지 생성 - 선택된 일기가 있으면 그에 대한 내용 포함
+  const getInitialMessage = () => {
+    if (selectedDiaryEntry) {
+      const diaryText = selectedDiaryEntry.note || "";
+      const diaryWord = selectedDiaryEntry.text || "";
+      const diaryDate = selectedDiaryEntry.date || "";
+
+      if (diaryText || diaryWord) {
+        return {
+          id: 1,
+          type: "ai",
+          content: `Hi Yonoo!\nI see you're looking at your diary entry about "${diaryWord}"${
+            diaryDate ? ` from ${diaryDate}` : ""
+          }.\nWhat do you need today?`,
+          suggestions: [
+            "Clear advice",
+            "Supportive messages",
+            "Write apologies for me",
+          ],
+        };
+      }
+    }
+
+    return {
       id: 1,
       type: "ai",
       content: "Hi Yonoo!\nWhat do you need today?",
@@ -17,10 +40,13 @@ function ChatPage({ setCurrentPage }) {
         "Supportive messages",
         "Write apologies for me",
       ],
-    },
-  ]);
+    };
+  };
+
+  const [messages, setMessages] = useState([getInitialMessage()]);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
 
   // Load diary entries on mount
@@ -28,9 +54,27 @@ function ChatPage({ setCurrentPage }) {
     const entries = getDiaryEntries();
     setDiaryEntries(entries);
 
-    // Auto-select most recent entry if available
-    if (entries.length > 0) {
-      // Sort by date (most recent first)
+    // 선택된 일기가 있으면 그것을 사용, 없으면 가장 최근 항목 선택
+    if (selectedDiaryEntry) {
+      // selectedDiaryEntry의 id와 일치하는 항목 찾기
+      if (selectedDiaryEntry.id) {
+        const matchingEntry = entries.find(
+          (entry) => entry.id === selectedDiaryEntry.id
+        );
+        if (matchingEntry) {
+          setSelectedEntryId(matchingEntry.id);
+        }
+      } else {
+        // id가 없으면 word로 찾기
+        const matchingByWord = entries.find(
+          (entry) => entry.word === selectedDiaryEntry.text
+        );
+        if (matchingByWord) {
+          setSelectedEntryId(matchingByWord.id);
+        }
+      }
+    } else if (entries.length > 0) {
+      // 선택된 일기가 없으면 가장 최근 항목 선택
       const sortedEntries = [...entries].sort((a, b) => {
         const dateA = a.date
           ? new Date(a.date.replace(/\./g, "-"))
@@ -42,15 +86,33 @@ function ChatPage({ setCurrentPage }) {
       });
       setSelectedEntryId(sortedEntries[0].id);
     }
-  }, []);
+  }, [selectedDiaryEntry]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // scrollIntoView 사용 (messagesEndRef)
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+
+    // scrollTop 직접 설정 (백업)
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // 메시지가 변경될 때마다 스크롤
+    setTimeout(() => scrollToBottom(), 100);
   }, [messages]);
+
+  // 컴포넌트 마운트 시에도 스크롤
+  useEffect(() => {
+    setTimeout(() => scrollToBottom(), 100);
+  }, []);
 
   // Get the selected diary entry
   const getSelectedEntry = () => {
@@ -129,6 +191,8 @@ IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any mark
           },
         ];
       });
+      // 스크롤을 맨 아래로
+      setTimeout(() => scrollToBottom(), 200);
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       // 에러 메시지 표시
@@ -149,6 +213,8 @@ IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any mark
           },
         ];
       });
+      // 스크롤을 맨 아래로
+      setTimeout(() => scrollToBottom(), 200);
     }
   };
 
@@ -251,6 +317,8 @@ The user needs help writing an apology message. Write a short, sincere apology (
           },
         ];
       });
+      // 스크롤을 맨 아래로
+      setTimeout(() => scrollToBottom(), 200);
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       // Error message
@@ -271,6 +339,8 @@ The user needs help writing an apology message. Write a short, sincere apology (
           },
         ];
       });
+      // 스크롤을 맨 아래로
+      setTimeout(() => scrollToBottom(), 200);
     }
   };
 
@@ -338,7 +408,7 @@ The user needs help writing an apology message. Write a short, sincere apology (
         )}
 
         {/* Chat messages */}
-        <div className="chat-messages">
+        <div className="chat-messages" ref={messagesContainerRef}>
           {messages.map((message) => (
             <div
               key={message.id}
@@ -392,7 +462,14 @@ The user needs help writing an apology message. Write a short, sincere apology (
               </div>
             </div>
           ))}
-          <div ref={messagesEndRef} />
+          <div
+            ref={messagesEndRef}
+            style={{
+              height: "1px",
+              width: "100%",
+              flexShrink: 0,
+            }}
+          />
         </div>
 
         {/* Input section */}
