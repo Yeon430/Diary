@@ -76,10 +76,14 @@ function App() {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
 
-      // 캔버스 크기 설정 (고정 크기)
+      // 캔버스 크기 설정
       const container = canvas.parentElement;
       if (container) {
         const rect = container.getBoundingClientRect();
+        
+        // CSS 크기와 내부 해상도를 일치시킴
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
         canvas.width = rect.width;
         canvas.height = rect.height;
 
