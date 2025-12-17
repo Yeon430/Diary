@@ -157,28 +157,10 @@ function UploadPage({
                 setWords((prev) => {
                   return [...prev, newWord];
                 });
-                // "One more layer added!" 메시지 표시
+                // "One more layer added!" 메시지 표시하고 input 페이지로 이동
+                // 상태 초기화는 App.js의 useEffect에서 5초 후 처리됨
                 setShowLayerMessage(true);
-                setTimeout(() => {
-                  setShowLayerMessage(false);
-                }, 3000); // 3초 후 메시지 숨김
-                // 첫 화면으로 돌아가면서 상태 초기화
                 setCurrentPage("input");
-                setInputValue("");
-                setSavedInputValue("");
-                setUploadedFile(null);
-                setNoteValue("");
-                setDrawnFaceImage(null);
-                // 캔버스도 초기화
-                if (canvasRef.current) {
-                  const ctx = canvasRef.current.getContext("2d");
-                  ctx.clearRect(
-                    0,
-                    0,
-                    canvasRef.current.width,
-                    canvasRef.current.height
-                  );
-                }
               }
             }}
           >

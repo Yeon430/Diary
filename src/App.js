@@ -24,13 +24,7 @@ function App() {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  const [words, setWords] = useState([
-    { text: "LA", icon: true },
-    { text: "PAris", icon: true },
-    { text: "watermelon", icon: true },
-    { text: "Pizzaa", icon: true },
-    { text: "Movie", icon: true },
-  ]);
+  const [words, setWords] = useState([]);
 
   // localStorage에서 다이어리 항목 불러오기
   useEffect(() => {
@@ -48,27 +42,11 @@ function App() {
         mediaType: entry.mediaType || null,
       }));
 
-      // 기존 하드코딩된 words와 합치기 (중복 제거)
-      setWords((prevWords) => {
-        const existingTexts = new Set(prevWords.map((w) => w.text));
-        const newWords = loadedWords.filter((w) => !existingTexts.has(w.text));
-        return [...prevWords, ...newWords];
-      });
+      // localStorage에서 불러온 항목으로 words 설정
+      setWords(loadedWords);
     }
   }, []);
 
-  // 버블 위치 하드코딩 (스크린샷 정확히 재현)
-  useEffect(() => {
-    const hardcodedLayout = [
-      { leftPercent: 18, bottomPx: 250, rotationDeg: -10 },
-      { leftPercent: 20, bottomPx: 160, rotationDeg: -20 },
-      { leftPercent: 30, bottomPx: 50, rotationDeg: -40 },
-      { leftPercent: 65, bottomPx: 220, rotationDeg: 10 },
-      { leftPercent: 75, bottomPx: 60, rotationDeg: -20 },
-    ];
-
-    setBubbleLayout(hardcodedLayout);
-  }, []);
 
   // Canvas 초기화
   useEffect(() => {
@@ -91,6 +69,33 @@ function App() {
       }
     }
   }, [currentPage]);
+
+  // "One more layer added" 메시지 표시 후 5초 뒤 랜딩 페이지로 이동
+  useEffect(() => {
+    if (showLayerMessage) {
+      const timer = setTimeout(() => {
+        setShowLayerMessage(false);
+        // 상태 초기화
+        setInputValue("");
+        setSavedInputValue("");
+        setUploadedFile(null);
+        setNoteValue("");
+        setDrawnFaceImage(null);
+        // 캔버스도 초기화
+        if (canvasRef.current) {
+          const ctx = canvasRef.current.getContext("2d");
+          ctx.clearRect(
+            0,
+            0,
+            canvasRef.current.width,
+            canvasRef.current.height
+          );
+        }
+      }, 5000); // 5초 후
+
+      return () => clearTimeout(timer);
+    }
+  }, [showLayerMessage]);
 
   if (currentPage === "feeling") {
     return (
@@ -163,6 +168,64 @@ function App() {
     );
   }
 
+  // "One more layer added" 페이지 (전체 화면)
+  if (showLayerMessage) {
+    // 가장 최근에 추가된 버블 찾기
+    const latestWord = words.length > 0 ? words[words.length - 1] : null;
+    
+    return (
+      <div className="App">
+        <div className="main-container layer-added-container">
+          {/* Chat bubble with "Great job!" */}
+          <div className="chat-section layer-added-chat-section">
+            <div className="chat-bubble layer-added-chat-bubble">
+              Great job!
+            </div>
+            <div
+              className="avatar layer-added-avatar"
+              onClick={() => setCurrentPage("chat")}
+              style={{ cursor: "pointer" }}
+            ></div>
+          </div>
+
+          {/* "One more layer added!" 텍스트 */}
+          <div className="layer-message-section layer-added-message-section">
+            <div className="layer-message-text">One more layer added!</div>
+          </div>
+
+          {/* 방금 추가된 버블 (중앙) */}
+          {latestWord && (
+            <div className="layer-added-new-bubble-container">
+              <div className="word-bubble layer-added-new-bubble">
+                {latestWord.text}
+                {latestWord.icon && latestWord.faceImage && (
+                  <span className="circle-icon">
+                    <img
+                      src={latestWord.faceImage}
+                      alt="Face"
+                      className="face-image"
+                    />
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 기존 버블들 (하단) */}
+          <WordBubbles
+            words={words.slice(0, -1)} // 마지막 버블 제외
+            bubbleLayout={bubbleLayout}
+            currentPage={currentPage}
+            setSelectedWordIndex={setSelectedWordIndex}
+            setCurrentPage={setCurrentPage}
+            setInputValue={setInputValue}
+            inputRef={inputRef}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <div className="main-container">
@@ -188,7 +251,7 @@ function App() {
         {/* Chat bubble */}
         <div className="chat-section">
           <div className="chat-bubble">
-            {showLayerMessage ? "Great job!" : "If you need some advise.."}
+            If you need some advise..
           </div>
           <div
             className="avatar"
@@ -197,73 +260,62 @@ function App() {
           ></div>
         </div>
 
-        {/* Layer added message */}
-        {showLayerMessage && (
-          <div className="layer-message-section">
-            <div className="layer-message-text">One more layer added!</div>
+        {/* Main question */}
+        <div className="question-section">
+          <div className="question-text">
+            <span className="greeting">
+              Hi <span className="highlight">Yonoo</span>!
+            </span>
           </div>
-        )}
+          <div className="question-text">What's one</div>
+          <div className="question-text">word for your</div>
+          <div className="question-text">day today?</div>
+        </div>
 
-        {/* Main question - showLayerMessage일 때는 숨김 */}
-        {!showLayerMessage && (
-          <div className="question-section">
-            <div className="question-text">
-              <span className="greeting">
-                Hi <span className="highlight">Yonoo</span>!
-              </span>
-            </div>
-            <div className="question-text">What's one</div>
-            <div className="question-text">word for your</div>
-            <div className="question-text">day today?</div>
-          </div>
-        )}
-
-        {/* Input field - showLayerMessage일 때는 숨김 */}
-        {!showLayerMessage && (
-          <div className="input-section">
-            <div className={`input-field ${inputValue ? "has-text" : ""}`}>
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && inputValue.trim()) {
-                    setSavedInputValue(inputValue); // 입력한 단어 저장
-                    setCurrentPage("feeling");
-                  }
-                }}
-                placeholder=""
-                className="input-text"
-              />
-            </div>
-            {inputValue && (
-              <div
-                className="submit-button"
-                onClick={() => {
+        {/* Input field */}
+        <div className="input-section">
+          <div className={`input-field ${inputValue ? "has-text" : ""}`}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && inputValue.trim()) {
                   setSavedInputValue(inputValue); // 입력한 단어 저장
                   setCurrentPage("feeling");
-                }}
-              >
-                <svg
-                  className="submit-arrow"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                >
-                  <path
-                    d="M7 4L13 10L7 16"
-                    stroke="#364C41"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-            )}
+                }
+              }}
+              placeholder=""
+              className="input-text"
+            />
           </div>
-        )}
+          {inputValue && (
+            <div
+              className="submit-button"
+              onClick={() => {
+                setSavedInputValue(inputValue); // 입력한 단어 저장
+                setCurrentPage("feeling");
+              }}
+            >
+              <svg
+                className="submit-arrow"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+              >
+                <path
+                  d="M7 4L13 10L7 16"
+                  stroke="#364C41"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
 
         {/* Word bubbles */}
         <WordBubbles
