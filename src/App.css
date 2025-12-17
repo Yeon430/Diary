@@ -169,6 +169,59 @@
   letter-spacing: -1.5%;
 }
 
+/* Layer added page styles */
+.layer-added-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.layer-added-chat-section {
+  margin-top: 20px;
+  margin-bottom: 0;
+  z-index: 200;
+  position: relative;
+}
+
+.layer-added-chat-bubble {
+  margin-right: 50px;
+  margin-top: 10px;
+}
+
+.layer-added-avatar {
+  top: 10px;
+}
+
+.layer-added-message-section {
+  margin-top: 40px;
+  margin-bottom: 30px;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 20px;
+  position: relative;
+  z-index: 100;
+}
+
+.layer-added-new-bubble-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 150;
+  flex-shrink: 0;
+}
+
+.layer-added-new-bubble {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  margin: 0 auto;
+  display: inline-flex;
+}
+
 /* Question section */
 .question-section {
   margin-bottom: 24px;
