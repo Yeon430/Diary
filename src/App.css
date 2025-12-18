@@ -609,7 +609,7 @@
   margin-top: -100px; /* 이 값을 음수로 하면 얼굴이 더 위로 올라갑니다 */
   margin-bottom: 40px;
   width: 100%;
-  min-height: 400px; /* 그림판 크기 조정 (값이 클수록 더 넓어집니다) */
+  min-height: 600px; /* 그림판 크기 조정 (값이 클수록 더 넓어집니다) */
   padding: 20px;
 }
 
@@ -635,6 +635,7 @@
   z-index: 2;
   user-select: none;
   -webkit-user-select: none;
+  display: block;
 }
 
 .clear-button-section {

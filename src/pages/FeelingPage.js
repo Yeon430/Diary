@@ -19,6 +19,7 @@ function FeelingPage({
       const ctx = canvas.getContext("2d");
       const touch = e.touches[0];
       ctx.beginPath();
+      // CSS 좌표 사용 (ctx.scale이 이미 적용되어 있음)
       ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
     };
 
@@ -28,6 +29,7 @@ function FeelingPage({
       const rect = canvas.getBoundingClientRect();
       const ctx = canvas.getContext("2d");
       const touch = e.touches[0];
+      // CSS 좌표 사용 (ctx.scale이 이미 적용되어 있음)
       ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
       ctx.stroke();
     };
@@ -114,6 +116,7 @@ function FeelingPage({
               const rect = canvas.getBoundingClientRect();
               const ctx = canvas.getContext("2d");
               ctx.beginPath();
+              // CSS 좌표 사용 (ctx.scale이 이미 적용되어 있음)
               ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
             }}
             onMouseMove={(e) => {
@@ -123,6 +126,7 @@ function FeelingPage({
               if (!canvas) return;
               const rect = canvas.getBoundingClientRect();
               const ctx = canvas.getContext("2d");
+              // CSS 좌표 사용 (ctx.scale이 이미 적용되어 있음)
               ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
               ctx.stroke();
             }}
