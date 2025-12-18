@@ -47,7 +47,6 @@ function App() {
     }
   }, []);
 
-
   // Canvas 초기화
   useEffect(() => {
     if (currentPage === "feeling" && canvasRef.current) {
@@ -172,7 +171,7 @@ function App() {
   if (showLayerMessage) {
     // 가장 최근에 추가된 버블 찾기
     const latestWord = words.length > 0 ? words[words.length - 1] : null;
-    
+
     return (
       <div className="App">
         <div className="main-container layer-added-container">
@@ -250,9 +249,7 @@ function App() {
 
         {/* Chat bubble */}
         <div className="chat-section">
-          <div className="chat-bubble">
-            If you need some advise..
-          </div>
+          <div className="chat-bubble">If you need some advise..</div>
           <div
             className="avatar"
             onClick={() => setCurrentPage("chat")}

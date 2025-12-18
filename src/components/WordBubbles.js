@@ -88,10 +88,10 @@ function WordBubbles({
     canvasRef.current = canvas;
 
     const context = canvas.getContext("2d");
-    
+
     // 고해상도 스케일링
     context.scale(dpr, dpr);
-    
+
     // 선명한 렌더링을 위한 설정
     context.imageSmoothingEnabled = false;
 
@@ -123,7 +123,8 @@ function WordBubbles({
       const textHeight = getTextHeight(font);
       const iconSize = word.icon && word.faceImage ? 24 : 0; // 아이콘 크기
       const iconPadding = word.icon && word.faceImage ? 8 : 0; // 아이콘과 텍스트 사이 간격
-      const width = textWidth + paddingX * 2 + (iconSize > 0 ? iconSize + iconPadding : 0);
+      const width =
+        textWidth + paddingX * 2 + (iconSize > 0 ? iconSize + iconPadding : 0);
       const height = Math.max(textHeight, iconSize) + paddingY * 2;
 
       // 초기 위치: 오래된 항목일수록 더 위에서 시작
@@ -301,8 +302,10 @@ function WordBubbles({
         context.rotate(angle);
 
         // pill 형태 배경 (고정된 크기 사용)
-        const width = bubble.fixedWidth || (bubble.bounds.max.x - bubble.bounds.min.x);
-        const height = bubble.fixedHeight || (bubble.bounds.max.y - bubble.bounds.min.y);
+        const width =
+          bubble.fixedWidth || bubble.bounds.max.x - bubble.bounds.min.x;
+        const height =
+          bubble.fixedHeight || bubble.bounds.max.y - bubble.bounds.min.y;
         const radius = Math.min(width, height) / 2;
 
         // 버블 배경 (dark green)
@@ -331,21 +334,21 @@ function WordBubbles({
         // 텍스트와 아이콘을 가로로 배치
         const textX = -width / 2 + paddingX; // 왼쪽에서 패딩만큼 떨어진 위치
         const iconX = width / 2 - paddingX - 12; // 오른쪽에서 패딩 + 반지름만큼 떨어진 위치
-        
+
         // 텍스트 그리기 (왼쪽 정렬)
         context.font = font;
         context.textAlign = "left";
         context.textBaseline = "middle";
-        
+
         // 텍스트 선명도를 위한 subtle stroke 추가
         context.strokeStyle = "#2a3a33";
         context.lineWidth = 1;
         context.lineJoin = "round";
         context.miterLimit = 2;
-        
+
         // 텍스트 stroke (외곽선) 먼저 그리기
         context.strokeText(word, textX, 0);
-        
+
         // 텍스트 fill (흰색)
         context.fillStyle = "#ffffff";
         context.fillText(word, textX, 0);
@@ -356,13 +359,13 @@ function WordBubbles({
           if (cachedImg) {
             context.save();
             context.translate(iconX, 0); // 오른쪽으로 이동
-            
+
             // 흰색 원 배경
             context.beginPath();
             context.arc(0, 0, 12, 0, Math.PI * 2);
             context.fillStyle = "#ffffff";
             context.fill();
-            
+
             // 이미지 클리핑
             context.beginPath();
             context.arc(0, 0, 12, 0, Math.PI * 2);
@@ -380,7 +383,7 @@ function WordBubbles({
 
     // 렌더링 루프 시작
     renderLoop();
-    
+
     // Runner 시작
     const runner = Runner.create();
     Runner.run(runner, engine);

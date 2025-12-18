@@ -45,7 +45,6 @@ function ChatPage({ setCurrentPage, selectedDiaryEntry }) {
 
   const [messages, setMessages] = useState([getInitialMessage()]);
   const [inputValue, setInputValue] = useState("");
-  const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -89,30 +88,15 @@ function ChatPage({ setCurrentPage, selectedDiaryEntry }) {
   }, [selectedDiaryEntry]);
 
   const scrollToBottom = () => {
-    // scrollIntoView 사용 (messagesEndRef)
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-      });
-    }
-
-    // scrollTop 직접 설정 (백업)
     if (messagesContainerRef.current) {
-      const container = messagesContainerRef.current;
-      container.scrollTop = container.scrollHeight;
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
     }
   };
 
   useEffect(() => {
-    // 메시지가 변경될 때마다 스크롤
-    setTimeout(() => scrollToBottom(), 100);
+    scrollToBottom();
   }, [messages]);
-
-  // 컴포넌트 마운트 시에도 스크롤
-  useEffect(() => {
-    setTimeout(() => scrollToBottom(), 100);
-  }, []);
 
   // Get the selected diary entry
   const getSelectedEntry = () => {
@@ -191,8 +175,7 @@ IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any mark
           },
         ];
       });
-      // 스크롤을 맨 아래로
-      setTimeout(() => scrollToBottom(), 200);
+      scrollToBottom();
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       // 에러 메시지 표시
@@ -213,8 +196,7 @@ IMPORTANT: Keep your response SHORT (2-3 sentences maximum). Do NOT use any mark
           },
         ];
       });
-      // 스크롤을 맨 아래로
-      setTimeout(() => scrollToBottom(), 200);
+      scrollToBottom();
     }
   };
 
@@ -317,8 +299,7 @@ The user needs help writing an apology message. Write a short, sincere apology (
           },
         ];
       });
-      // 스크롤을 맨 아래로
-      setTimeout(() => scrollToBottom(), 200);
+      scrollToBottom();
     } catch (error) {
       console.error("Error calling Gemini API:", error);
       // Error message
@@ -339,8 +320,7 @@ The user needs help writing an apology message. Write a short, sincere apology (
           },
         ];
       });
-      // 스크롤을 맨 아래로
-      setTimeout(() => scrollToBottom(), 200);
+      scrollToBottom();
     }
   };
 
@@ -462,14 +442,6 @@ The user needs help writing an apology message. Write a short, sincere apology (
               </div>
             </div>
           ))}
-          <div
-            ref={messagesEndRef}
-            style={{
-              height: "1px",
-              width: "100%",
-              flexShrink: 0,
-            }}
-          />
         </div>
 
         {/* Input section */}
