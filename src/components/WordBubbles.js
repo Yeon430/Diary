@@ -243,6 +243,7 @@ function WordBubbles({
         const wordIndex = body.wordIndex;
 
         if (wordData.note || wordData.uploadedFile) {
+          // 일기가 있으면 일기 상세 페이지로 이동
           setSelectedWordIndex(wordIndex);
           setCurrentPage("detail");
         } else {
@@ -274,6 +275,7 @@ function WordBubbles({
 
         // 클릭 처리 (짧은 드래그는 클릭으로 간주)
         if (wordData.note || wordData.uploadedFile) {
+          // 일기가 있으면 일기 상세 페이지로 이동
           setSelectedWordIndex(wordIndex);
           setCurrentPage("detail");
         } else {

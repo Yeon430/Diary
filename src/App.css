@@ -954,6 +954,16 @@
   box-shadow: 0 1px 2px rgba(54, 76, 65, 0.1);
 }
 
+.suggestion-button.clicked {
+  background-color: #364c41;
+  color: #ffffc6;
+}
+
+.suggestion-button.clicked:hover {
+  background-color: #364c41;
+  transform: none;
+}
+
 .chat-input-section {
   flex-shrink: 0; /* 🔥 이거 없으면 스크롤 깨짐 */
   padding: 12px;

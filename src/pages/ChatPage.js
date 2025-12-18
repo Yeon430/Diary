@@ -45,6 +45,7 @@ function ChatPage({ setCurrentPage, selectedDiaryEntry }) {
 
   const [messages, setMessages] = useState([getInitialMessage()]);
   const [inputValue, setInputValue] = useState("");
+  const [clickedSuggestions, setClickedSuggestions] = useState(new Set()); // 클릭된 버튼 추적
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -250,8 +251,12 @@ The user needs help writing an apology message. Write a short, sincere apology (
   };
 
   // Handle button click - trigger API call with specific prompt type
-  const handleSuggestionClick = async (suggestion) => {
+  const handleSuggestionClick = async (suggestion, messageId) => {
     const selectedEntry = getSelectedEntry();
+
+    // 클릭된 버튼 추적 (메시지 ID와 버튼 텍스트 조합)
+    const buttonKey = `${messageId}-${suggestion}`;
+    setClickedSuggestions((prev) => new Set([...prev, buttonKey]));
 
     // Add user message showing which button was clicked
     const userMessage = {
@@ -427,15 +432,23 @@ The user needs help writing an apology message. Write a short, sincere apology (
                   ))}
                   {message.suggestions && (
                     <div className="suggestions">
-                      {message.suggestions.map((suggestion, index) => (
-                        <button
-                          key={index}
-                          className="suggestion-button"
-                          onClick={() => handleSuggestionClick(suggestion)}
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
+                      {message.suggestions.map((suggestion, index) => {
+                        const buttonKey = `${message.id}-${suggestion}`;
+                        const isClicked = clickedSuggestions.has(buttonKey);
+                        return (
+                          <button
+                            key={index}
+                            className={`suggestion-button ${
+                              isClicked ? "clicked" : ""
+                            }`}
+                            onClick={() =>
+                              handleSuggestionClick(suggestion, message.id)
+                            }
+                          >
+                            {suggestion}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
